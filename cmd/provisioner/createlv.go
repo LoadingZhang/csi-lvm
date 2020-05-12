@@ -145,14 +145,14 @@ func mountLV(lvname, vgname, directory string) (string, error) {
 	if err != nil {
 		klog.Infof("unable to check if %s is already formatted:%v", lvPath, err)
 	}
-	if strings.Contains(string(out), "ext4") {
+	if strings.Contains(string(out), "btrfs") {
 		formatted = true
 	}
 
 	mountPath := path.Join(directory, lvname)
 	if !formatted {
-		klog.Infof("formatting with mkfs.ext4 %s", lvPath)
-		cmd = exec.Command("mkfs.ext4", lvPath)
+		klog.Infof("formatting with mkfs.btrfs %s", lvPath)
+		cmd = exec.Command("mkfs.btrfs", lvPath)
 		out, err = cmd.CombinedOutput()
 		if err != nil {
 			return string(out), fmt.Errorf("unable to format lv:%s err:%v", lvname, err)
@@ -165,7 +165,7 @@ func mountLV(lvname, vgname, directory string) (string, error) {
 	}
 
 	// --make-shared is required that this mount is visible outside this container.
-	mountArgs := []string{"--make-shared", "-t", "ext4", lvPath, mountPath}
+	mountArgs := []string{"--make-shared", "-onoatime,nodatasum,nodatacow,nobarrier,space_cache=v2", lvPath, mountPath}
 	klog.Infof("mountlv command: mount %s", mountArgs)
 	cmd = exec.Command("mount", mountArgs...)
 	out, err = cmd.CombinedOutput()
@@ -296,7 +296,7 @@ func createLVS(ctx context.Context, vg string, name string, size uint64, lvmType
 		return "", fmt.Errorf("size must be greater than 0")
 	}
 
-	args := []string{"-v", "-n", name, "-W", "y", "-L", fmt.Sprintf("%db", size)}
+	args := []string{"-v", "-n", name, "-L", fmt.Sprintf("%db", size), "-y"}
 
 	pvs, err := pvCount(vg)
 	if err != nil {
@@ -323,7 +323,7 @@ func createLVS(ctx context.Context, vg string, name string, size uint64, lvmType
 		args = append(args, "--add-tag", tag)
 	}
 	args = append(args, vg)
-	klog.Infof("lvreate %s", args)
+	klog.Infof("lvcreate %s", args)
 	cmd := exec.Command("lvcreate", args...)
 	out, err := cmd.CombinedOutput()
 	return string(out), err

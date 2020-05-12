@@ -92,7 +92,7 @@ func startCmd() *cli.Command {
 				Name:    flagDefaultLVMType,
 				Usage:   "Optional. the default lvm type to use, must be one of linear|striped|mirror",
 				EnvVars: []string{envDefaultLVMType},
-				Value:   mirrorType,
+				Value:   stripedType,
 			},
 			&cli.StringFlag{
 				Name:    flagMountPoint,
